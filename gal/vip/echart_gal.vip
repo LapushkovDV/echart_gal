@@ -1,0 +1,132 @@
+/*************************************************************************************************\
+* Наименование: Ведение телефонного справочника                                                   *
+* Контур/Модуль: Кадры                                                                            *
+* Примечание:                                                                                     *
+*                                                                                                 *
+* Вид работы  |Номер         |Дата    |Исполнитель              |Проект                           *
+* ----------------------------------------------------------------------------------------------- *
+
+\*************************************************************************************************/
+
+const
+end;
+
+#component "C_ECHART"
+Interface echart_gal 'echart_gal';
+
+create view
+ var
+     _LongStringLog
+   , _serviceLog    : tptr;
+;
+
+Function GenerateNewFile: string;
+{
+ result := GetStringParameter('Files','OutputFilesDirectory',0)+ '\HTML_'+DateToStr(cur_date,'YYYYMMDD')+'_'+timetostr(cur_time,'HHMMSS-SSS');
+ result := replace(result,'\\','\');
+}
+
+procedure init_LongStringLog; {
+  _serviceLog    := HttpConnect_CreateEx('http://ya.ru', '', '', true);
+  _LongStringLog := HttpConnect_CreateLongString(_serviceLog);
+}
+
+Procedure AddStr_LongStringLog(_str: string); {
+  HttpConnect_AddValueToLongString(_serviceLog, _str, _LongStringLog);
+}
+
+Procedure AddLongStr_LongStringLog(_strLong: tptr); {
+  HttpConnect_AddLongValueToLongString(_serviceLog, _strLong, _LongStringLog);
+}
+
+
+function Save_LongStringLog_toHTML : string; {
+  var __LongStringLogFile : string = GenerateNewFile+'.html';
+  HttpConnect_SaveToFileEx(_serviceLog, _LongStringLog, __LongStringLogFile, cpUTF8, false);
+  result := __LongStringLogFile;
+}
+
+procedure htmlhead; {
+   AddStr_LongStringLog('<!DOCTYPE html>      ');
+   AddStr_LongStringLog('<html>               ');
+   AddStr_LongStringLog('  <head>             ');
+   AddStr_LongStringLog('    <meta charset="utf-8" />');
+   AddStr_LongStringLog('    <!-- Include the ECharts file you just downloaded -->             ');
+   AddStr_LongStringLog('    <script src="C:\Galaktika\_git\echart_gal\echarts-5.5.1\package\dist\echarts.js"></script>     ');
+   AddStr_LongStringLog('  </head>                                                             ');
+   AddStr_LongStringLog('  <body>                                                              ');
+}
+
+procedure layothead (_width : string = '600px'; _height : string = '400px'); {
+
+   AddStr_LongStringLog('  <!-- Prepare a DOM with a defined width and height for ECharts -->  ');
+   AddStr_LongStringLog('	<div id="main" style="width: '+_width+';height:'+_height+';"></div>             ');
+   AddStr_LongStringLog('	<script type="text/javascript">                                      ');
+   AddStr_LongStringLog('      // Initialize the echarts instance based on the prepared dom    ');
+   AddStr_LongStringLog('      var myChart = echarts.init(document.getElementById("main"));    ');
+}
+
+procedure layotaddstring(_str : string); {
+    AddStr_LongStringLog(_str);
+}
+
+procedure layotaddLongstring(_longStr : tptr); {
+   AddLongStr_LongStringLog(_longStr );
+}
+
+procedure layotend; {
+   AddStr_LongStringLog('    </script>                                                                    ');
+}
+
+procedure htmlend; {
+
+   AddStr_LongStringLog('  </body>                                                                        ');
+   AddStr_LongStringLog('</html>                                                                          ');
+}
+
+handleevent
+cminit: {
+   init_LongStringLog;
+   htmlhead;
+   layothead ( '600px', '400px');
+   layotaddstring('                                                                      ');
+   layotaddstring('      // Specify the configuration items and data for the chart       ');
+   layotaddstring('      var option = {                                                  ');
+   layotaddstring('        title: {                                                      ');
+   layotaddstring('          text: "ECharts Getting Started Example"                     ');
+   layotaddstring('        },                                                            ');
+   layotaddstring('        tooltip: {},                                                  ');
+   layotaddstring('        legend: {                                                     ');
+   layotaddstring('          data: ["sales"]                                             ');
+   layotaddstring('        },                                                            ');
+   layotaddstring('        xAxis: {                                                      ');
+   layotaddstring('          data: ["Shirts", "Cardigans", "Chiffons", "Pants", "Heels", "Socks"]');
+   layotaddstring('        },                                                                    ');
+   layotaddstring('        yAxis: {},                                                            ');
+   layotaddstring('        series: [                                                             ');
+   layotaddstring('          {                                                                   ');
+   layotaddstring('            name: "sales",                                                    ');
+   layotaddstring('            type: "bar",                                                     ');
+   layotaddstring('            data: [5, 20, 36, 10, 10, 20]                                     ');
+   layotaddstring('          }                                                                   ');
+   layotaddstring('        ]                                                                     ');
+   layotaddstring('      };                                                                      ');
+   layotaddstring('                                                                              ');
+   layotaddstring('      // Display the chart using the configuration items and data just specified.');
+   layotaddstring('      myChart.setOption(option);                                                 ');
+    layotend;
+    htmlend;
+   var _html : string = Save_LongStringLog_toHTML;
+
+ PutFileToClient(_html,false);
+/*
+ var aErrorCode : longint;
+ var aDosCode : longint = ExecProgram('',_html, 'Просмотр файла', pfKeepWindow+pfDontWait, aErrorCode);
+  if aDosCode <> 0 then {
+    Message('Ошибка открытия HTML:'+
+     ''#13'' + _html, mfError);
+  }
+  */
+}
+end;
+end.
